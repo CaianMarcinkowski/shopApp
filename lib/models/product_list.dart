@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -10,7 +9,7 @@ import 'package:shop/utils/constants.dart';
 import '../exceptions/http_exception.dart';
 
 class ProductList with ChangeNotifier {
-  List<Product> _items = [];
+  final List<Product> _items = [];
 
   List<Product> get items => [..._items];
   List<Product> get favoritesItems =>
