@@ -1,9 +1,9 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shop/exceptions/auth_exception.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class Auth with ChangeNotifier {
   String? _token;
@@ -34,8 +34,9 @@ class Auth with ChangeNotifier {
     String password,
     String urlFragment,
   ) async {
+    final apiKey = dotenv.env['API_KEY'];
     final url =
-        'https://identitytoolkit.googleapis.com/v1/accounts:$urlFragment?key=AIzaSyBM-PEcpkzl7PNd8GK1rColzhQi1wribLI';
+        'https://identitytoolkit.googleapis.com/v1/accounts:$urlFragment?key=$apiKey';
 
     print('URL: $url');
     print('Email enviado: $email');
