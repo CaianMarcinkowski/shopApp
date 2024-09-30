@@ -13,6 +13,7 @@ import 'package:shop/pages/product_page.dart';
 import 'package:shop/utils/app_routes.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shop/utils/custom_route.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Inicializa o binding do Flutter
@@ -28,10 +29,22 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ProductList()),
-        ChangeNotifierProvider(create: (_) => Cart()),
-        ChangeNotifierProvider(create: (_) => OrderList()),
         ChangeNotifierProvider(create: (_) => Auth()),
+        ChangeNotifierProxyProvider<Auth, ProductList>(
+          create: (_) => ProductList(),
+          update: (ctx, auth, previous) {
+            return ProductList(
+                auth.token ?? '', previous?.items ?? [], auth.userId ?? '');
+          },
+        ),
+        ChangeNotifierProvider(create: (_) => Cart()),
+        ChangeNotifierProxyProvider<Auth, OrderList>(
+          create: (_) => OrderList(),
+          update: (ctx, auth, previous) {
+            return OrderList(
+                auth.token ?? '', previous?.items ?? [], auth.userId ?? '');
+          },
+        ),
       ],
       child: MaterialApp(
         title: 'Flutter Demo',
@@ -46,6 +59,10 @@ class MyApp extends StatelessWidget {
                     255, 255, 255, 255)), // Customizando `titleLarge`
           ),
           fontFamily: 'Lato',
+          pageTransitionsTheme: PageTransitionsTheme(builders: {
+            TargetPlatform.android: CustomPageTransitionsBuilder(),
+            TargetPlatform.iOS: CustomPageTransitionsBuilder(),
+          }),
         ),
         //home: ProductsOverviewPage(),
         debugShowCheckedModeBanner: false,

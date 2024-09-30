@@ -8,28 +8,52 @@ class ProductDetailPage extends StatelessWidget {
         ModalRoute.of(context)!.settings.arguments as Product;
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: Text(
-          product.name,
-          style: const TextStyle(
-            color: Colors.white,
-          ),
-        ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              height: 300,
-              width: double.infinity,
-              child: Image.network(
-                product.imageUrl,
-                fit: BoxFit.cover,
+      // appBar: AppBar(
+      //   title: Text(
+      //     product.name,
+      //     style: const TextStyle(
+      //       color: Colors.white,
+      //     ),
+      //   ),
+      //   backgroundColor: Theme.of(context).colorScheme.primary,
+      // ),
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 300,
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              title: Text(product.name),
+              background: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Hero(
+                    tag: product.id,
+                    child: Image.network(
+                      product.imageUrl,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  const DecoratedBox(
+                      decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                    begin: Alignment(0, 0.8),
+                    end: Alignment(0, 0),
+                    colors: [
+                      Color.fromRGBO(0, 0, 0, 0.6),
+                      Color.fromRGBO(0, 0, 0, 0),
+                    ],
+                  )))
+                ],
               ),
             ),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+          ),
+          SliverList(
+              delegate: SliverChildListDelegate([
             const SizedBox(height: 10),
             Text(
+              textAlign: TextAlign.center,
               'R\$ ${product.price}',
               style: const TextStyle(
                 color: Colors.grey,
@@ -45,8 +69,8 @@ class ProductDetailPage extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
             ),
-          ],
-        ),
+          ]))
+        ],
       ),
     );
   }

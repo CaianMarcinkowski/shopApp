@@ -24,7 +24,7 @@ class OrdersPage extends StatelessWidget {
         builder: (ctx, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
-          } else if (snapshot.error != null) {
+          } else if (snapshot.error == null) {
             return Center(child: Text("Ocorreu um erro!"));
           } else {
             return Consumer<OrderList>(

@@ -1,15 +1,18 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shop/data/store.dart';
 import 'package:shop/exceptions/auth_exception.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class Auth with ChangeNotifier {
   String? _token;
   String? _email;
-  String? _uid;
+  String? _userId;
   DateTime? _expiryDate;
+  Timer? _logoutTimer;
 
   bool get isAuth {
     final isValid = _expiryDate?.isAfter(DateTime.now()) ?? false;
@@ -25,8 +28,8 @@ class Auth with ChangeNotifier {
     return isAuth ? _email : null;
   }
 
-  String? get uid {
-    return isAuth ? _uid : null;
+  String? get userId {
+    return isAuth ? _userId : null;
   }
 
   Future<void> _authenticate(
@@ -38,10 +41,6 @@ class Auth with ChangeNotifier {
     final url =
         'https://identitytoolkit.googleapis.com/v1/accounts:$urlFragment?key=$apiKey';
 
-    print('URL: $url');
-    print('Email enviado: $email');
-    print('Password enviado: $password');
-
     final response = await http.post(
       Uri.parse(url),
       headers: {'Content-Type': 'application/json'},
@@ -52,8 +51,6 @@ class Auth with ChangeNotifier {
       }),
     );
 
-    print(jsonDecode(response.body));
-
     final body = jsonDecode(response.body);
 
     if (body['error'] != null) {
@@ -61,11 +58,37 @@ class Auth with ChangeNotifier {
     } else {
       _token = body['idToken'];
       _email = body['email'];
-      _uid = body['localId'];
+      _userId = body['localId'];
       _expiryDate =
           DateTime.now().add(Duration(seconds: int.parse(body['expiresIn'])));
     }
 
+    Store.saveMap('userData', {
+      'token': _token,
+      'email': _email,
+      'userId': _userId,
+      'expiryDate': _expiryDate!.toIso8601String(),
+    });
+
+    _autoLogout();
+    notifyListeners();
+  }
+
+  Future<void> tryAutoLogin() async {
+    if (isAuth) return;
+
+    final userData = await Store.getMap('userData');
+    if (userData.isEmpty) return;
+
+    final expiredDate = DateTime.parse(userData['expiryDate']);
+    if (expiredDate.isBefore(DateTime.now())) return;
+
+    _token = userData['token'];
+    _email = userData['email'];
+    _userId = userData['userId'];
+    _expiryDate = expiredDate;
+
+    _autoLogout();
     notifyListeners();
   }
 
@@ -75,5 +98,26 @@ class Auth with ChangeNotifier {
 
   Future<void> login(String email, String password) async {
     return await _authenticate(email, password, 'signInWithPassword');
+  }
+
+  void logout() {
+    _token = null;
+    _email = null;
+    _userId = null;
+    _expiryDate = null;
+
+    _clearAutoLogoutTimer();
+    Store.remove('userData').then((_) => notifyListeners());
+  }
+
+  void _clearAutoLogoutTimer() {
+    _logoutTimer?.cancel();
+    _logoutTimer = null;
+  }
+
+  void _autoLogout() {
+    _clearAutoLogoutTimer();
+    final timeToLogout = _expiryDate?.difference(DateTime.now()).inSeconds;
+    _logoutTimer = Timer(Duration(seconds: timeToLogout ?? 0), logout);
   }
 }
